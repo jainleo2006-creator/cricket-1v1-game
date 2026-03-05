@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cricket 1v1 Online</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080c10;--panel:#0f1520;--card:#151d2b;--border:#1e2d42;--accent:#00e5ff;--gold:#ffc947;--red:#ff3d5a;--green:#00e676;--text:#dde8f0;--muted:#4a6070;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.screen{display:none;position:relative;z-index:1;}
+.screen.active{display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:20px;}
+/* LOBBY */
+#lobby{justify-content:center;gap:0;}
+.logo-main{font-family:'Bebas Neue',sans-serif;font-size:clamp(64px,14vw,120px);line-height:0.85;background:linear-gradient(135deg,var(--accent) 0%,#0080ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 30px rgba(0,229,255,0.3));letter-spacing:4px;}
+.logo-sub{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:10px;color:var(--accent);opacity:.6;margin-top:4px;}
+.logo-badge{display:inline-block;padding:4px 14px;background:linear-gradient(90deg,var(--red),#ff6b35);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:#fff;margin-top:10px;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);}
+.logo-wrap{text-align:center;margin-bottom:40px;}
+.lobby-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px;}
+@media(max-width:500px){.lobby-grid{grid-template-columns:1fr;}}
+.lobby-card{background:var(--card);border:1px solid var(--border);padding:28px 24px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s;}
+.lobby-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .2s;}
+.lobby-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.lobby-card:hover::before{opacity:1;}
+.card-icon{font-size:40px;margin-bottom:12px;display:block;}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;}
+.card-desc{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.4;}
+.xfield{width:100%;max-width:560px;background:var(--card);border:1px solid var(--border);padding:14px 18px;color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:600;letter-spacing:2px;outline:none;transition:border-color .2s;margin-bottom:16px;}
+.xfield:focus{border-color:var(--accent);}
+.flabel{font-size:11px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;width:100%;max-width:560px;text-align:left;}
+/* ROOM */
+#room-screen{justify-content:center;gap:20px;}
+.rcode{font-family:'Bebas Neue',sans-serif;font-size:72px;letter-spacing:12px;color:var(--accent);text-shadow:0 0 30px rgba(0,229,255,.4);line-height:1;}
+.rlabel{font-size:13px;letter-spacing:4px;color:var(--muted);text-align:center;}
+.rstatus{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);letter-spacing:3px;animation:pulse 1.5s ease-in-out infinite;text-align:center;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.pwrap{display:flex;gap:16px;width:100%;max-width:480px;}
+.pslot{flex:1;background:var(--card);border:1px solid var(--border);padding:20px;text-align:center;position:relative;}
+.pslot.on{border-color:var(--green);}
+.pslot.on::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);}
+.sicon{font-size:32px;margin-bottom:8px;}
+.sname{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;}
+.stag{font-size:11px;letter-spacing:3px;color:var(--muted);margin-top:4px;}
+/* TOSS */
+#toss-screen{justify-content:center;gap:24px;text-align:center;}
+.stitle{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:4px;}
+.coin3d{width:110px;height:110px;margin:0 auto;cursor:pointer;}
+.cinner{width:100%;height:100%;border-radius:50%;background:conic-gradient(from 0deg,#ffd700,#b8860b,#ffd700,#b8860b,#ffd700);display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 8px 24px rgba(0,0,0,.6),inset 0 2px 4px rgba(255,255,255,.3);}
+.cinner.spin{animation:coinS 1s ease-in-out forwards;}
+@keyframes coinS{0%{transform:rotateY(0) scale(1)}30%{transform:rotateY(180deg) scale(.8)}60%{transform:rotateY(360deg) scale(1.1)}100%{transform:rotateY(720deg) scale(1)}}
+.tbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.tbtn{padding:12px 32px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;background:var(--card);border:2px solid var(--border);color:var(--text);transition:all .2s;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);}
+.tbtn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.tbtn.picked{border-color:var(--accent);background:rgba(0,229,255,.1);color:var(--accent);}
+.tbtn:disabled{opacity:.4;cursor:not-allowed;}
+.trtxt{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--gold);min-height:36px;}
+/* GAME */
+#game-screen{padding:0;align-items:stretch;justify-content:flex-start;}
+.topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.tbroom{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:3px;color:var(--muted);}
+.tbroom span{color:var(--accent);}
+.ldot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:blink 1s infinite;display:inline-block;margin-right:6px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.scoreboard{background:var(--panel);border-bottom:2px solid var(--border);padding:12px 16px;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.ssid{display:flex;flex-direction:column;}
+.ssid.r{align-items:flex-end;}
+.stnam{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.sruns{font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:1;color:var(--accent);}
+.sdet{font-size:13px;color:var(--muted);}
+.smid{text-align:center;}
+.sovr{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);letter-spacing:2px;}
+.stgt{font-size:12px;color:var(--gold);margin-top:2px;}
+.srr{font-size:11px;color:var(--accent);margin-top:2px;}
+.fwrap{display:flex;justify-content:center;padding:12px;}
+.field{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#2e7d32,#1b5e20 50%,#0d3b0f);position:relative;box-shadow:0 0 0 4px rgba(0,229,255,.1),inset 0 0 40px rgba(0,0,0,.5);border:1px solid rgba(0,229,255,.1);}
+.prect{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:96px;background:linear-gradient(180deg,#c8a96e,#a07848);border-radius:4px;opacity:.8;}
+.stumps2{position:absolute;display:flex;gap:4px;left:50%;transform:translateX(-50%);}
+.stumps2.t{top:12px;}.stumps2.b{bottom:12px;}
+.st{width:3px;height:15px;background:#e8d5a3;border-radius:1px;}
+.chips{display:flex;gap:8px;padding:6px 12px;justify-content:center;flex-wrap:wrap;}
+.chip{padding:5px 12px;background:var(--card);border:1px solid var(--border);font-size:12px;letter-spacing:2px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:600;}
+.chip b{color:var(--accent);}
+.ovtrack{display:flex;gap:6px;padding:6px 12px;justify-content:center;flex-wrap:wrap;}
+.ob{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;border:2px solid var(--border);color:var(--muted);background:var(--card);transition:all .25s;}
+.ob.cur{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08);}
+.ob.d0{color:#3a5060;border-color:#1e2d42;}
+.ob.d1{color:#64b5f6;border-color:#1565c0;}
+.ob.d2{color:#81c784;border-color:#2e7d32;}
+.ob.d3{color:#aed581;border-color:#558b2f;}
+.ob.d4{color:var(--accent);border-color:#0097a7;}
+.ob.d6{color:var(--gold);border-color:#e65100;}
+.ob.dW{color:var(--red);border-color:#b71c1c;}
+.ob.dWd,.ob.dNb{color:#ff9800;border-color:#e65100;}
+.commbox{margin:6px 12px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);padding:10px 14px;font-size:14px;line-height:1.5;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.ctxt{flex:1;}
+.cbadge{font-family:'Bebas Neue',sans-serif;font-size:26px;padding:2px 8px;flex-shrink:0;}
+.cb-dot{color:#3a5060;}.cb-1{color:#64b5f6;}.cb-2{color:#81c784;}.cb-3{color:#aed581;}.cb-4{color:var(--accent);font-size:32px;}.cb-6{color:var(--gold);font-size:36px;}.cb-W{color:var(--red);font-size:32px;}.cb-Wd,.cb-Nb{color:#ff9800;}
+.aarea{padding:10px 12px 20px;}
+.atitle{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:4px;color:var(--muted);text-align:center;margin-bottom:10px;}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:440px;margin:0 auto;}
+.shot{padding:10px 6px;background:var(--card);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center;transition:all .15s;font-family:'Barlow Condensed',sans-serif;}
+.shot:hover:not(:disabled){border-color:var(--accent);background:rgba(0,229,255,.06);transform:translateY(-1px);}
+.shot:disabled{opacity:.3;cursor:not-allowed;}
+.shot .sr{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);display:block;line-height:1;}
+.shot .sn{font-size:10px;letter-spacing:1px;color:var(--muted);display:block;margin-top:2px;}
+.bowlui{display:none;flex-direction:column;align-items:center;gap:12px;padding:16px;}
+.bowllbl{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--muted);}
+.waitmsg{display:none;flex-direction:column;align-items:center;gap:12px;padding:20px;text-align:center;}
+.waitmsg .wt{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--accent);animation:pulse 1.5s ease-in-out infinite;}
+.waitmsg .ws{font-size:14px;color:var(--muted);}
+.bbtn{padding:14px 44px;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;cursor:pointer;border:none;transition:all .2s;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);}
+.bbtn.p{background:var(--accent);color:var(--bg);}
+.bbtn.p:hover{background:#40eeff;box-shadow:0 0 20px rgba(0,229,255,.4);}
+.bbtn.s{background:transparent;border:2px solid var(--accent);color:var(--accent);}
+.bbtn.s:hover{background:rgba(0,229,255,.08);}
+.bbtn:disabled{opacity:.4;cursor:not-allowed;}
+/* RESULT */
+#result-screen{justify-content:center;gap:20px;text-align:center;}
+.rtrophy{font-size:80px;animation:float 2s ease-in-out infinite alternate;}
+@keyframes float{from{transform:translateY(0)}to{transform:translateY(-14px)}}
+.rwinner{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,10vw,80px);letter-spacing:4px;background:linear-gradient(135deg,var(--gold),#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.rmargin{font-size:18px;color:var(--muted);letter-spacing:2px;}
+.scorecard{background:var(--card);border:1px solid var(--border);padding:20px 24px;width:100%;max-width:380px;position:relative;}
+.scorecard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.scr{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:15px;}
+.scr:last-child{border:none;}
+.scr .sl{color:var(--muted);}
+.scr .sv{color:var(--accent);font-weight:700;}
+.conf{position:fixed;width:8px;height:8px;top:-10px;animation:fall linear forwards;pointer-events:none;z-index:999;}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:0;}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--accent);padding:10px 22px;font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:2px;color:var(--accent);z-index:1000;transition:transform .3s ease;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.ibreak{position:fixed;inset:0;background:rgba(8,12,16,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;gap:16px;animation:fadeIn .3s;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.ibt{font-family:'Bebas Neue',sans-serif;font-size:56px;letter-spacing:6px;color:var(--accent);}
+.ibi{font-size:18px;color:var(--muted);letter-spacing:2px;}
+.ibg{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);letter-spacing:3px;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- LOBBY -->
+<div id="lobby" class="screen active">
+  <div class="logo-wrap">
+    <div class="logo-main">CRICKET<br>1 v 1</div>
+    <div class="logo-sub">ONLINE MULTIPLAYER</div>
+    <div class="logo-badge">● LIVE</div>
+  </div>
+  <div class="flabel">YOUR NAME</div>
+  <input class="xfield" id="pname" type="text" placeholder="Enter your name..." maxlength="14">
+  <div class="lobby-grid">
+    <div class="lobby-card" onclick="createRoom()">
+      <span class="card-icon">🏏</span>
+      <div class="card-title">CREATE ROOM</div>
+      <div class="card-desc">Host a match and share the code</div>
+    </div>
+    <div class="lobby-card" onclick="toggleJoin()">
+      <span class="card-icon">🔗</span>
+      <div class="card-title">JOIN ROOM</div>
+      <div class="card-desc">Enter a code to join your opponent</div>
+    </div>
+  </div>
+  <div id="joinarea" style="display:none;width:100%;max-width:560px;margin-top:12px;flex-direction:column;align-items:center;gap:10px;">
+    <input class="xfield" id="rcinput" type="text" placeholder="ROOM CODE" maxlength="4" style="text-transform:uppercase;letter-spacing:8px;text-align:center;font-size:28px;">
+    <button class="bbtn p" onclick="joinRoom()">JOIN MATCH →</button>
+  </div>
+</div>
+
+<!-- ROOM -->
+<div id="room-screen" class="screen">
+  <div style="text-align:center;">
+    <div style="font-size:14px;letter-spacing:4px;color:var(--muted);margin-bottom:8px;">ROOM CODE</div>
+    <div class="rcode" id="rcd">----</div>
+    <div class="rlabel">Share this code with your opponent</div>
+  </div>
+  <div class="rstatus" id="rstatus">⏳ WAITING FOR OPPONENT...</div>
+  <div class="pwrap">
+    <div class="pslot on" id="sp1"><div class="sicon">🏏</div><div class="sname" id="sp1n">YOU</div><div class="stag">HOST</div></div>
+    <div class="pslot" id="sp2"><div class="sicon">⏳</div><div class="sname" id="sp2n">WAITING...</div><div class="stag">GUEST</div></div>
+  </div>
+  <div style="display:flex;gap:12px;">
+    <button class="bbtn p" id="startbtn" onclick="hostStart()" disabled>START MATCH →</button>
+    <button class="bbtn s" onclick="leaveRoom()">LEAVE</button>
+  </div>
+</div>
+
+<!-- TOSS -->
+<div id="toss-screen" class="screen">
+  <div class="stitle">COIN TOSS</div>
+  <div style="color:var(--muted);font-size:14px;letter-spacing:3px;" id="tinstr">PICK YOUR CALL</div>
+  <div class="coin3d" onclick="animCoin()"><div class="cinner" id="cface">🏏</div></div>
+  <div class="tbtns" id="tbtns">
+    <button class="tbtn" onclick="pickToss('heads',this)">HEADS</button>
+    <button class="tbtn" onclick="pickToss('tails',this)">TAILS</button>
+  </div>
+  <div class="trtxt" id="trtxt"></div>
+  <div id="bbrow" style="display:none;flex-direction:column;align-items:center;gap:12px;">
+    <div style="font-size:16px;letter-spacing:2px;">YOU WON! Choose:</div>
+    <div style="display:flex;gap:12px;">
+      <button class="tbtn" onclick="chooseBB('bat')">🏏 BAT FIRST</button>
+      <button class="tbtn" onclick="chooseBB('bowl')">🎳 BOWL FIRST</button>
+    </div>
+  </div>
+  <div id="twait" style="display:none;"><div class="rstatus" id="twaitm">⏳ WAITING...</div></div>
+</div>
+
+<!-- GAME -->
+<div id="game-screen" class="screen">
+  <div class="topbar">
+    <div class="tbroom">ROOM <span id="tbr">----</span></div>
+    <div><span class="ldot"></span><span style="font-size:12px;letter-spacing:2px;color:var(--red)">LIVE</span></div>
+    <div id="tbin" style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--muted);">1ST INNINGS</div>
+  </div>
+  <div class="scoreboard">
+    <div class="ssid"><div class="stnam" id="sbt1n">P1</div><div class="sruns" id="sbt1r">0</div><div class="sdet" id="sbt1d">0 wkts</div></div>
+    <div class="smid"><div class="sovr" id="sbov">0.0</div><div class="stgt" id="sbtgt"></div><div class="srr" id="sbrr"></div></div>
+    <div class="ssid r"><div class="stnam" id="sbt2n">P2</div><div class="sruns" id="sbt2r">—</div><div class="sdet" id="sbt2d"></div></div>
+  </div>
+  <div class="fwrap">
+    <div class="field">
+      <div class="prect"></div>
+      <div class="stumps2 t"><div class="st"></div><div class="st"></div><div class="st"></div></div>
+      <div class="stumps2 b"><div class="st"></div><div class="st"></div><div class="st"></div></div>
+    </div>
+  </div>
+  <div class="chips">
+    <div class="chip">BATTING: <b id="cbat">—</b></div>
+    <div class="chip">LAST: <b id="clast">—</b></div>
+    <div class="chip">YOU: <b id="crole">—</b></div>
+  </div>
+  <div class="ovtrack" id="ovtrack"></div>
+  <div class="commbox"><div class="ctxt" id="ctxt">Welcome! Match is starting.</div><div class="cbadge" id="cbadge"></div></div>
+  <div class="aarea">
+    <div id="batui">
+      <div class="atitle">SELECT YOUR SHOT</div>
+      <div class="sgrid">
+        <button class="shot" onclick="pShot(0)"><span class="sr">·</span><span class="sn">Defend</span></button>
+        <button class="shot" onclick="pShot(1)"><span class="sr">1</span><span class="sn">Push</span></button>
+        <button class="shot" onclick="pShot(2)"><span class="sr">2</span><span class="sn">Drive</span></button>
+        <button class="shot" onclick="pShot(3)"><span class="sr">3</span><span class="sn">Sweep</span></button>
+        <button class="shot" onclick="pShot(4)"><span class="sr">4</span><span class="sn">Cut</span></button>
+        <button class="shot" onclick="pShot(6)"><span class="sr">6</span><span class="sn">Slog</span></button>
+        <button class="shot" onclick="pShot('w')"><span class="sr" style="font-size:16px;line-height:1.6">Wd</span><span class="sn">Wide</span></button>
+        <button class="shot" onclick="pShot('n')"><span class="sr" style="font-size:16px;line-height:1.6">Nb</span><span class="sn">No Ball</span></button>
+      </div>
+    </div>
+    <div class="bowlui" id="bowlui">
+      <div class="bowllbl">YOUR TURN TO BOWL</div>
+      <button class="bbtn p" id="bowlbtn" onclick="pBowl()">🎳 DELIVER BALL</button>
+    </div>
+    <div class="waitmsg" id="waitui">
+      <div class="wt" id="wt">WAITING</div>
+      <div class="ws" id="ws">Opponent's turn...</div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="result-screen" class="screen">
+  <div class="rtrophy" id="rtro">🏆</div>
+  <div class="rwinner" id="rwin">WINNER!</div>
+  <div class="rmargin" id="rmar"></div>
+  <div class="scorecard" id="scorecard"></div>
+  <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
+    <button class="bbtn p" onclick="backLobby()">↺ PLAY AGAIN</button>
+  </div>
+</div>
+
+<script>
+// STORAGE
+async function sGet(k){try{const r=await window.storage.get(k,true);return r?JSON.parse(r.value):null;}catch{return null;}}
+async function sSet(k,v){try{await window.storage.set(k,JSON.stringify(v),true);}catch{}}
+async function sDel(k){try{await window.storage.delete(k,true);}catch{}}
+
+// STATE
+let ME={name:'',role:null,rc:'',pk:''};
+let PT=null,GS=null,LS='',TMP=null,LK=false;
+
+function fresh(){
+  return{phase:'waiting',overs:5,inn:1,bk:null,
+    p1:{name:'',r:0,w:0,b:[],ob:[]},p2:{name:'',r:0,w:0,b:[],ob:[]},
+    tgt:null,toss:{p1p:null,p2p:null,res:null,win:null,bc:null},
+    ps:null,pb:false,lb:null,lc:'Match starting!',rtext:'',rmar:'',wk:null};
+}
+
+function ss(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function toast(m,d=2500){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
+function gc(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join('');}
+function gn(){return(document.getElementById('pname').value.trim().toUpperCase()||'PLAYER').slice(0,14);}
+function legal(a){return(a||[]).filter(x=>x!=='Wd'&&x!=='Nb').length;}
+function ovs(n){return Math.floor(n/6)+'.'+n%6;}
+function opp(){return ME.pk==='p1'?'p2':'p1';}
+function isBat(s){return s.bk===ME.pk;}
+function isBowl(s){return s.bk!==ME.pk;}
+
+// LOBBY
+function toggleJoin(){const j=document.getElementById('joinarea');j.style.display=j.style.display==='flex'?'none':'flex';}
+
+async function createRoom(){
+  ME.name=gn();ME.role='host';ME.rc=gc();ME.pk='p1';
+  const s=fresh();s.p1.name=ME.name;
+  await sSet('room:'+ME.rc,s);
+  document.getElementById('rcd').textContent=ME.rc;
+  document.getElementById('tbr').textContent=ME.rc;
+  document.getElementById('sp1n').textContent=ME.name;
+  document.getElementById('sp2n').textContent='Waiting...';
+  document.getElementById('sp2').classList.remove('on');
+  document.getElementById('startbtn').disabled=true;
+  document.getElementById('rstatus').textContent='⏳ WAITING FOR OPPONENT...';
+  ss('room-screen');startPoll('room');
+}
+
+async function joinRoom(){
+  ME.name=gn();ME.role='guest';
+  ME.rc=document.getElementById('rcinput').value.trim().toUpperCase();ME.pk='p2';
+  if(ME.rc.length<4){toast('Enter 4-letter code');return;}
+  const s=await sGet('room:'+ME.rc);
+  if(!s){toast('Room not found!');return;}
+  if(s.p2&&s.p2.name){toast('Room is full!');return;}
+  s.p2.name=ME.name;
+  await sSet('room:'+ME.rc,s);
+  document.getElementById('rcd').textContent=ME.rc;
+  document.getElementById('tbr').textContent=ME.rc;
+  document.getElementById('sp1n').textContent=s.p1.name;
+  document.getElementById('sp2n').textContent=ME.name;
+  document.getElementById('sp2').classList.add('on');
+  document.getElementById('startbtn').disabled=true;
+  document.getElementById('rstatus').textContent='✅ CONNECTED! Waiting for host...';
+  ss('room-screen');startPoll('room');
+}
+
+async function hostStart(){
+  const s=await sGet('room:'+ME.rc);
+  if(!s||!s.p2||!s.p2.name){toast('Opponent not joined!');return;}
+  s.phase='toss';await sSet('room:'+ME.rc,s);
+}
+
+async function leaveRoom(){stopPoll();await sDel('room:'+ME.rc);ss('lobby');}
+
+// POLL
+function startPoll(m){stopPoll();PT=setInterval(()=>poll(m),1500);}
+function stopPoll(){if(PT){clearInterval(PT);PT=null;}}
+
+async function poll(m){
+  const s=await sGet('room:'+ME.rc);if(!s)return;
+  const str=JSON.stringify(s);if(str===LS)return;
+  LS=str;GS=s;
+  if(m==='room'){
+    if(s.p2&&s.p2.name){
+      document.getElementById('sp2n').textContent=s.p2.name;
+      document.getElementById('sp2').classList.add('on');
+      if(ME.role==='host'){document.getElementById('startbtn').disabled=false;document.getElementById('rstatus').textContent='✅ '+s.p2.name+' JOINED!';}
+    }
+    if(s.phase==='toss'){stopPoll();initToss(s);}
+    return;
+  }
+  if(m==='toss'){handleToss(s);return;}
+  if(m==='game'){
+    renderGame(s);
+    if(s.phase==='result'){stopPoll();setTimeout(()=>showResult(s),600);return;}
+    if(s.pb&&s.ps!==null&&!LK){stopPoll();LK=true;await processBall(s);LK=false;startPoll('game');}
+  }
+}
+
+// TOSS
+function initToss(s){
+  GS=s;TMP=null;
+  document.getElementById('tinstr').textContent='PICK YOUR CALL';
+  document.getElementById('tbtns').style.display='flex';
+  document.getElementById('bbrow').style.display='none';
+  document.getElementById('twait').style.display='none';
+  document.getElementById('trtxt').textContent='';
+  document.querySelectorAll('.tbtn').forEach(b=>{b.classList.remove('picked');b.disabled=false;});
+  ss('toss-screen');startPoll('toss');
+}
+
+function animCoin(){const c=document.getElementById('cface');c.classList.remove('spin');void c.offsetWidth;c.classList.add('spin');}
+
+function pickToss(p,btn){
+  if(TMP)return;TMP=p;
+  document.querySelectorAll('.tbtn').forEach(b=>{b.classList.remove('picked');b.disabled=true;});
+  btn.classList.add('picked');
+  savePick(p);
+}
+
+async function savePick(p){const s=await sGet('room:'+ME.rc);s.toss[ME.pk+'p']=p;await sSet('room:'+ME.rc,s);}
+
+async function handleToss(s){
+  const t=s.toss;
+  if(t.p1p&&t.p2p&&!t.res&&ME.role==='host'){
+    const res=Math.random()<.5?'heads':'tails';
+    s.toss.res=res;s.toss.win=t.p1p===res?'p1':'p2';
+    await sSet('room:'+ME.rc,s);return;
+  }
+  if(t.res){
+    document.getElementById('cface').textContent=t.res==='heads'?'👑':'🌙';
+    const iw=t.win===ME.pk;
+    document.getElementById('trtxt').textContent=t.res.toUpperCase()+'! '+(iw?'YOU WIN':s[t.win].name+' WINS')+' THE TOSS!';
+    if(!t.bc){
+      if(iw){document.getElementById('tbtns').style.display='none';document.getElementById('bbrow').style.display='flex';document.getElementById('twait').style.display='none';}
+      else{document.getElementById('tbtns').style.display='none';document.getElementById('bbrow').style.display='none';document.getElementById('twait').style.display='block';document.getElementById('twaitm').textContent='⏳ TOSS WINNER DECIDING...';}
+    } else {stopPoll();initGame(s);}
+    return;
+  }
+  if(TMP&&!t.res){document.getElementById('tbtns').style.display='none';document.getElementById('twait').style.display='block';document.getElementById('twaitm').textContent="⏳ WAITING FOR OPPONENT'S PICK...";}
+}
+
+async function chooseBB(c){
+  const s=await sGet('room:'+ME.rc);
+  const tw=s.toss.win;
+  const bf=c==='bat'?tw:(tw==='p1'?'p2':'p1');
+  s.toss.bc=bf;s.bk=bf;s.phase='game';
+  await sSet('room:'+ME.rc,s);
+}
+
+function initGame(s){GS=s;ss('game-screen');renderGame(s);startPoll('game');}
+
+// SHOTS
+const SHTS={0:{w:.12,r:[0,0,0,0,1]},1:{w:.08,r:[1,1,1,2]},2:{w:.14,r:[2,2,2,1,3,4]},3:{w:.18,r:[3,3,1,2,4]},4:{w:.10,r:[4,4,4,2,1,0]},6:{w:.30,r:[6,6,0,4,1,0]}};
+const COMS={0:["Dot ball!","Played and missed!","Defended."],1:["Quick single!","Nudged for one."],2:["Two! Good running.","Driven for two!"],3:["Three! Hard running!"],4:["FOUR! Boundary!","Races to the rope!"],6:["SIX! Maximum!","HUGE SIX!"],W:["WICKET!","OUT! Edge taken!","CAUGHT!","LBW!"],Wd:["Wide ball!"],Nb:["No ball!"]};
+function rc(k){const a=COMS[k]||['Ball.'];return a[Math.floor(Math.random()*a.length)];}
+
+async function pShot(sh){
+  if(LK||!isBat(GS))return;
+  LK=true;setSE(false);
+  const s=await sGet('room:'+ME.rc);s.ps=sh;
+  await sSet('room:'+ME.rc,s);
+  document.getElementById('batui').style.display='none';
+  document.getElementById('waitui').style.display='flex';
+  document.getElementById('wt').textContent='SHOT CHOSEN!';
+  document.getElementById('ws').textContent='Waiting for bowler...';
+}
+
+async function pBowl(){
+  if(LK||!isBowl(GS))return;
+  LK=true;document.getElementById('bowlbtn').disabled=true;
+  const s=await sGet('room:'+ME.rc);s.pb=true;
+  await sSet('room:'+ME.rc,s);
+  document.getElementById('bowlui').style.display='none';
+  document.getElementById('waitui').style.display='flex';
+  document.getElementById('wt').textContent='BALL DELIVERED!';
+  document.getElementById('ws').textContent="Waiting for batter's shot...";
+}
+
+async function processBall(s){
+  const sh=s.ps,bk=s.bk,bd=s[bk];
+  let res,com;
+  if(sh==='w'){res='Wd';bd.r++;com=rc('Wd');}
+  else if(sh==='n'){res='Nb';bd.r++;com=rc('Nb');}
+  else{
+    const o=SHTS[sh];
+    if(!o){res=0;com="Dot ball.";}
+    else if(Math.random()<o.w){res='W';bd.w++;com=rc('W');}
+    else{const r=o.r[Math.floor(Math.random()*o.r.length)];res=r;bd.r+=r;com=rc(r);}
+  }
+  bd.b.push(res);bd.ob.push(res);
+  s.ps=null;s.pb=false;s.lb=res;s.lc=com;
+  if(legal(bd.ob)>=6)bd.ob=[];
+  const tl=legal(bd.b),ao=bd.w>=10,ou=tl>=s.overs*6,ch=s.inn===2&&bd.r>=s.tgt;
+  if(ch){await endMatch(s,true);return;}
+  if(ao||ou){await endInn(s);return;}
+  await sSet('room:'+ME.rc,s);
+}
+
+async function endInn(s){
+  if(s.inn===1){
+    s.tgt=s[s.bk].r+1;s.inn=2;s.bk=s.bk==='p1'?'p2':'p1';s.ps=null;s.pb=false;
+    await sSet('room:'+ME.rc,s);
+    showIB(s);
+  } else {await endMatch(s,false);}
+}
+
+async function endMatch(s,ch){
+  const p1r=s.p1.r,p2r=s.p2.r;
+  let wk,rt,mt;
+  if(ch){wk=s.bk;const rem=10-s[wk].w;rt=s[wk].name+' WIN';mt='By '+rem+' wicket'+(rem!==1?'s':'');}
+  else if(p1r>p2r){wk='p1';rt=s.p1.name+' WIN';mt='By '+(p1r-p2r)+' run'+(p1r-p2r!==1?'s':'');}
+  else if(p2r>p1r){wk='p2';rt=s.p2.name+' WIN';mt='By '+(p2r-p1r)+' run'+(p2r-p1r!==1?'s':'');}
+  else{wk=null;rt='TIE MATCH!';mt='Scores level!';}
+  s.wk=wk;s.rtext=rt;s.rmar=mt;s.phase='result';
+  await sSet('room:'+ME.rc,s);
+}
+
+function showIB(s){
+  const first=s.bk==='p1'?s.p2:s.p1,sec=s[s.bk];
+  const o=document.createElement('div');o.className='ibreak';
+  o.innerHTML=`<div class="ibt">INNINGS BREAK</div><div class="ibi">${first.name} scored ${first.r}</div><div class="ibg">TARGET: ${s.tgt}</div><div class="ibi">${sec.name} needs ${s.tgt} runs</div><button class="bbtn p" style="margin-top:12px" onclick="this.parentElement.remove()">CONTINUE →</button>`;
+  document.body.appendChild(o);
+}
+
+function renderGame(s){
+  GS=s;
+  document.getElementById('tbin').textContent=s.inn===1?'1ST INNINGS':'2ND INNINGS';
+  const t1k=s.toss.bc||'p1',t2k=t1k==='p1'?'p2':'p1';
+  document.getElementById('sbt1n').textContent=s[t1k].name;
+  document.getElementById('sbt2n').textContent=s[t2k].name;
+  document.getElementById('sbt1r').textContent=s[t1k].r;
+  document.getElementById('sbt1d').textContent=s[t1k].w+' wkts · '+ovs(legal(s[t1k].b))+' ov';
+  if(s.inn===1){
+    document.getElementById('sbt2r').textContent='—';document.getElementById('sbt2d').textContent='';
+    document.getElementById('sbtgt').textContent='';document.getElementById('sbrr').textContent='';
+  } else {
+    document.getElementById('sbt2r').textContent=s[t2k].r;
+    document.getElementById('sbt2d').textContent=s[t2k].w+' wkts · '+ovs(legal(s[t2k].b))+' ov';
+    const need=s.tgt-s[s.bk].r,bl=(s.overs*6)-legal(s[s.bk].b);
+    document.getElementById('sbtgt').textContent='TARGET '+s.tgt;
+    document.getElementById('sbrr').textContent=need>0?'Need '+need+' off '+bl+'b':'';
+  }
+  document.getElementById('sbov').textContent=ovs(legal(s[s.bk].b));
+  document.getElementById('cbat').textContent=s[s.bk].name;
+  document.getElementById('clast').textContent=s.lb!==null?(s.lb===0?'·':s.lb):'—';
+  document.getElementById('crole').textContent=isBat(s)?'🏏 BATTING':'🎳 BOWLING';
+  // Over dots
+  const track=document.getElementById('ovtrack');track.innerHTML='';
+  const ob=s[s.bk].ob||[];const lsf=legal(ob);
+  for(let i=0;i<6;i++){
+    const b=ob[i],div=document.createElement('div');div.classList.add('ob');
+    if(b===undefined){if(i===lsf)div.classList.add('cur');div.textContent=i+1;}
+    else{const cls=b==='W'?'dW':b==='Wd'?'dWd':b==='Nb'?'dNb':b===0?'d0':'d'+b;div.classList.add(cls);div.textContent=b===0?'·':b;}
+    track.appendChild(div);
+  }
+  // Commentary
+  if(s.lc)document.getElementById('ctxt').textContent=s.lc;
+  if(s.lb!==null){
+    const badge=document.getElementById('cbadge'),lb=s.lb;
+    badge.textContent=lb===0?'·':lb==='W'?'OUT!':lb==='Wd'?'WIDE':lb==='Nb'?'NB':lb===4?'4!':lb===6?'6!':lb;
+    badge.className='cbadge '+(lb===0?'cb-dot':lb==='W'?'cb-W':lb==='Wd'?'cb-Wd':lb==='Nb'?'cb-Nb':'cb-'+lb);
+  }
+  if(s.phase!=='game')return;
+  document.getElementById('batui').style.display='none';
+  document.getElementById('bowlui').style.display='none';
+  document.getElementById('waitui').style.display='none';
+  if(isBat(s)){
+    if(s.ps===null&&!LK){document.getElementById('batui').style.display='block';setSE(true);}
+    else{document.getElementById('waitui').style.display='flex';document.getElementById('wt').textContent='SHOT CHOSEN!';document.getElementById('ws').textContent='Waiting for bowler...';}
+  } else {
+    if(!s.pb&&!LK){document.getElementById('bowlui').style.display='flex';document.getElementById('bowlbtn').disabled=false;}
+    else{document.getElementById('waitui').style.display='flex';document.getElementById('wt').textContent='BALL BOWLED!';document.getElementById('ws').textContent="Waiting for batter's shot...";}
+  }
+}
+
+function setSE(v){document.querySelectorAll('.shot').forEach(b=>b.disabled=!v);}
+
+function showResult(s){
+  ss('result-screen');
+  const iw=s.wk===ME.pk,tie=s.wk===null;
+  document.getElementById('rtro').textContent=tie?'🤝':iw?'🏆':'💔';
+  document.getElementById('rwin').textContent=s.rtext;
+  document.getElementById('rmar').textContent=s.rmar;
+  document.getElementById('scorecard').innerHTML=
+    `<div class="scr"><span class="sl">${s.p1.name}</span><span class="sv">${s.p1.r}/${s.p1.w} (${ovs(legal(s.p1.b))} ov)</span></div>
+     <div class="scr"><span class="sl">${s.p2.name}</span><span class="sv">${s.p2.r}/${s.p2.w} (${ovs(legal(s.p2.b))} ov)</span></div>
+     <div class="scr"><span class="sl">OVERS</span><span class="sv">${s.overs}</span></div>
+     <div class="scr"><span class="sl">RESULT</span><span class="sv">${s.rmar}</span></div>`;
+  if(iw)confetti();
+}
+
+function confetti(){
+  const cols=['#00e5ff','#ffc947','#ff3d5a','#00e676','#fff'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div');c.className='conf';
+    c.style.left=Math.random()*100+'vw';c.style.background=cols[Math.floor(Math.random()*cols.length)];
+    c.style.borderRadius=Math.random()>.5?'50%':'0';c.style.animationDuration=(Math.random()*2+2)+'s';
+    c.style.animationDelay=Math.random()*1.5+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),4500);
+  }
+}
+
+function backLobby(){stopPoll();ss('lobby');}
+</script>
+</body>
+</html>
